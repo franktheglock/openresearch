@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deep Research</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <!-- PNG fallback for browsers that don't support SVG favicons -->
+  <link rel="alternate icon" type="image/png" href="/static/favicon.png">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Deep Research</h1>
+      <div>
+        <button id="debug-btn" class="settings-btn" style="margin-right: 8px;">🐛 Debug</button>
+        <button id="settings-btn" class="settings-btn">⚙️ Settings</button>
+      </div>
+    </header>
+
+    <form id="research-form">
+      <label for="topic">What do you want to research?</label>
+      <input id="topic" name="topic" type="text" placeholder="e.g., Quantum computing in finance" required />
+
+      <label for="depth">Depth</label>
+      <select id="depth" name="depth">
+        <option value="brief">Brief</option>
+        <option value="standard" selected>Standard</option>
+        <option value="deep">Deep</option>
+      </select>
+
+      <button type="submit">Start Research</button>
+    </form>
+
+    <div id="status" class="status"></div>
+
+    <div id="clarifying-questions" class="panel hidden">
+      <h2>Help Us Understand Your Research Better</h2>
+      <p>Please answer these questions to help create more targeted search queries:</p>
+      <div id="questions-list"></div>
+      <div class="confirmation-actions">
+        <button id="submit-clarification-btn" class="primary">Submit Answers</button>
+        <button id="skip-clarification-btn">Skip & Continue</button>
+      </div>
+    </div>
+
+    <div id="query-confirmation" class="panel hidden">
+      <h2>Review Search Queries</h2>
+      <p>Please review and modify the search queries below, then click "Confirm & Search":</p>
+      <div id="queries-editor"></div>
+      <button id="add-query-btn">+ Add Query</button>
+      <div class="confirmation-actions">
+        <button id="confirm-queries-btn" class="primary">Confirm & Search</button>
+        <button id="cancel-queries-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="plan" class="panel hidden">
+      <h2>Search Plan</h2>
+      <ul id="plan-list"></ul>
+    </div>
+
+    <div id="steps" class="panel hidden">
+      <h2>Search Results</h2>
+      <div id="steps-list"></div>
+    </div>
+
+    <div id="report" class="panel hidden">
+      <h2>Report</h2>
+      <div class="export-actions">
+        <button id="export-md" type="button">Export Markdown (.md)</button>
+        <button id="export-html" type="button">Export HTML (.html)</button>
+        <button id="export-pdf" type="button" class="primary">Export PDF (.pdf)</button>
+      </div>
+      <div id="report-content" class="markdown"></div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="settings-panel hidden">
+      <div class="settings-header">
+        <h2>Debug Information</h2>
+        <button type="button" id="close-debug" onclick="toggleDebug()">×</button>
+      </div>
+      <div class="settings-content">
+        <div id="debug-content">
+          <p>No debug information available yet. Run a research task to see LLM interactions.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Panel (not a modal) -->
+    <div id="settings-panel" class="settings-panel hidden">
+      <div class="settings-header">
+        <h2>Settings</h2>
+        <button type="button" id="close-settings" onclick="toggleSettings()">×</button>
+      </div>
+      <div class="settings-content">
+        <div class="setting-group">
+          <label for="llm-provider">LLM Provider:</label>
+          <select id="llm-provider">
+            <option value="ollama">Ollama (Local)</option>
+            <option value="openrouter">OpenRouter (Cloud)</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="mistral">Mistral</option>
+            <option value="groq">Groq</option>
+            <option value="lmstudio">LMStudio (Local)</option>
+          </select>
+        </div>
+        
+        <div class="setting-group">
+          <label for="search-provider">Search Provider:</label>
+          <select id="search-provider">
+            <option value="searxng">SearxNG</option>
+            <option value="duckduckgo">DuckDuckGo</option>
+          </select>
+        </div>
+        
+        <div id="ollama-settings" class="provider-settings">
+          <h3>Ollama Settings</h3>
+          <div class="setting-group">
+            <label for="thinking-model">Thinking Model:</label>
+            <select id="thinking-model"></select>
+          </div>
+          <div class="setting-group">
+            <label for="task-model">Task Model:</label>
+            <select id="task-model"></select>
+          </div>
+          <div class="setting-group">
+            <label for="ollama-url">Ollama URL:</label>
+            <input type="text" id="ollama-url" placeholder="http://localhost:11434" />
+          </div>
+        </div>
+
+        <div id="openrouter-settings" class="provider-settings hidden">
+          <h3>OpenRouter Settings</h3>
+          <div class="setting-group">
+            <label for="openrouter-api-key">API Key:</label>
+            <input type="password" id="openrouter-api-key" placeholder="sk-or-..." />
+          </div>
+          <div class="setting-group">
+            <label for="openrouter-thinking-model">Thinking Model:</label>
+            <input type="text" id="openrouter-thinking-model" placeholder="e.g., meta-llama/llama-3.1-70b-instruct" />
+          </div>
+          <div class="setting-group">
+            <label for="openrouter-task-model">Task Model:</label>
+            <input type="text" id="openrouter-task-model" placeholder="e.g., anthropic/claude-3.5-sonnet" />
+          </div>
+          <div class="setting-group">
+            <label for="openrouter-max-tokens">Max Tokens:</label>
+            <input type="number" id="openrouter-max-tokens" placeholder="4096" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="openai-settings" class="provider-settings hidden">
+          <h3>OpenAI Settings</h3>
+          <div class="setting-group">
+            <label for="openai-api-key">API Key:</label>
+            <input type="password" id="openai-api-key" placeholder="sk-..." />
+          </div>
+          <div class="setting-group">
+            <label for="openai-thinking-model">Thinking Model:</label>
+            <input type="text" id="openai-thinking-model" placeholder="e.g., gpt-4o-mini" />
+          </div>
+          <div class="setting-group">
+            <label for="openai-task-model">Task Model:</label>
+            <input type="text" id="openai-task-model" placeholder="e.g., gpt-4o-mini" />
+          </div>
+          <div class="setting-group">
+            <label for="openai-max-tokens">Max Tokens:</label>
+            <input type="number" id="openai-max-tokens" placeholder="4096" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="anthropic-settings" class="provider-settings hidden">
+          <h3>Anthropic Settings</h3>
+          <div class="setting-group">
+            <label for="anthropic-api-key">API Key:</label>
+            <input type="password" id="anthropic-api-key" placeholder="sk-ant-..." />
+          </div>
+          <div class="setting-group">
+            <label for="anthropic-thinking-model">Thinking Model:</label>
+            <input type="text" id="anthropic-thinking-model" placeholder="e.g., claude-3-5-sonnet-latest" />
+          </div>
+          <div class="setting-group">
+            <label for="anthropic-task-model">Task Model:</label>
+            <input type="text" id="anthropic-task-model" placeholder="e.g., claude-3-5-sonnet-latest" />
+          </div>
+          <div class="setting-group">
+            <label for="anthropic-max-tokens">Max Tokens:</label>
+            <input type="number" id="anthropic-max-tokens" placeholder="4096" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="gemini-settings" class="provider-settings hidden">
+          <h3>Google Gemini Settings</h3>
+          <div class="setting-group">
+            <label for="gemini-api-key">API Key:</label>
+            <input type="password" id="gemini-api-key" placeholder="AIza..." />
+          </div>
+          <div class="setting-group">
+            <label for="gemini-thinking-model">Thinking Model:</label>
+            <input type="text" id="gemini-thinking-model" placeholder="e.g., gemini-1.5-pro-latest" />
+          </div>
+          <div class="setting-group">
+            <label for="gemini-task-model">Task Model:</label>
+            <input type="text" id="gemini-task-model" placeholder="e.g., gemini-1.5-pro-latest" />
+          </div>
+          <div class="setting-group">
+            <label for="gemini-max-tokens">Max Tokens:</label>
+            <input type="number" id="gemini-max-tokens" placeholder="4096" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="mistral-settings" class="provider-settings hidden">
+          <h3>Mistral Settings</h3>
+          <div class="setting-group">
+            <label for="mistral-api-key">API Key:</label>
+            <input type="password" id="mistral-api-key" placeholder="sk-..." />
+          </div>
+          <div class="setting-group">
+            <label for="mistral-thinking-model">Thinking Model:</label>
+            <input type="text" id="mistral-thinking-model" placeholder="e.g., mistral-large-latest" />
+          </div>
+          <div class="setting-group">
+            <label for="mistral-task-model">Task Model:</label>
+            <input type="text" id="mistral-task-model" placeholder="e.g., mistral-large-latest" />
+          </div>
+          <div class="setting-group">
+            <label for="mistral-max-tokens">Max Tokens:</label>
+            <input type="number" id="mistral-max-tokens" placeholder="4096" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="groq-settings" class="provider-settings hidden">
+          <h3>Groq Settings</h3>
+          <div class="setting-group">
+            <label for="groq-api-key">API Key:</label>
+            <input type="password" id="groq-api-key" placeholder="gsk_..." />
+          </div>
+          <div class="setting-group">
+            <label for="groq-thinking-model">Thinking Model:</label>
+            <input type="text" id="groq-thinking-model" placeholder="e.g., llama-3.1-70b-versatile" />
+          </div>
+          <div class="setting-group">
+            <label for="groq-task-model">Task Model:</label>
+            <input type="text" id="groq-task-model" placeholder="e.g., llama-3.1-70b-versatile" />
+          </div>
+          <div class="setting-group">
+            <label for="groq-max-tokens">Max Tokens:</label>
+            <input type="number" id="groq-max-tokens" placeholder="4096" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="lmstudio-settings" class="provider-settings hidden">
+          <h3>LMStudio Settings</h3>
+          <div class="setting-group">
+            <label for="lmstudio-base-url">Base URL:</label>
+            <input type="text" id="lmstudio-base-url" placeholder="http://localhost:1234/v1" />
+          </div>
+          <div class="setting-group">
+            <label for="lmstudio-thinking-model">Thinking Model:</label>
+            <select id="lmstudio-thinking-model"></select>
+          </div>
+            <div class="setting-group">
+            <label for="lmstudio-task-model">Task Model:</label>
+            <select id="lmstudio-task-model"></select>
+          </div>
+          <div class="setting-group">
+            <label for="lmstudio-max-tokens">Max Tokens:</label>
+            <input type="number" id="lmstudio-max-tokens" placeholder="2048" min="1" max="200000" />
+          </div>
+        </div>
+
+        <div id="searxng-search-settings" class="provider-settings">
+          <h3>SearxNG Search Settings</h3>
+          <div class="setting-group">
+            <label for="searxng-url">SearxNG URL:</label>
+            <input type="text" id="searxng-url" placeholder="http://localhost:8080" />
+          </div>
+          <div class="setting-group">
+            <label for="searxng-language">Language:</label>
+            <input type="text" id="searxng-language" placeholder="en-US" />
+          </div>
+          <div class="setting-group">
+            <label for="searxng-results">Max Results:</label>
+            <input type="number" id="searxng-results" placeholder="8" min="1" max="20" />
+          </div>
+        </div>
+
+        <div id="duckduckgo-search-settings" class="provider-settings hidden">
+          <h3>DuckDuckGo Search Settings</h3>
+          <div class="setting-group">
+            <label for="duckduckgo-region">Region:</label>
+            <input type="text" id="duckduckgo-region" placeholder="us-en" />
+          </div>
+          <div class="setting-group">
+            <label for="duckduckgo-results">Max Results:</label>
+            <input type="number" id="duckduckgo-results" placeholder="8" min="1" max="20" />
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label for="searxng-url">SearxNG URL:</label>
+          <input type="text" id="searxng-url" placeholder="http://localhost:8080" />
+        </div>
+      </div>
+      <div class="settings-footer">
+        <button type="button" id="save-settings" class="primary">Save Settings</button>
+        <button type="button" id="refresh-ollama-models">Refresh Ollama Models</button>
+        <button type="button" id="refresh-openrouter-models">Set OpenRouter Defaults</button>
+        <button type="button" id="refresh-lmstudio-models">Refresh LMStudio Models</button>
+        <button type="button" id="cancel-settings" onclick="toggleSettings()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    // Configure marked.js for better markdown parsing
+    marked.setOptions({
+      breaks: true,        // Convert line breaks to <br>
+      gfm: true,          // GitHub flavored markdown (includes tables)
+      sanitize: false,    // Don't sanitize HTML (we want full markdown support)
+      smartypants: true   // Use smart quotes and other typographic improvements
+    });
+
+    // Simple function to toggle settings panel
+    function toggleSettings() {
+      console.log('toggleSettings() called');
+      const panel = document.getElementById('settings-panel');
+      if (panel) {
+        panel.classList.toggle('hidden');
+        console.log('Settings panel toggled');
+      } else {
+        console.error('Settings panel not found!');
+      }
+    }
+
+    // Simple function to toggle debug panel
+    function toggleDebug() {
+      console.log('toggleDebug() called');
+      const panel = document.getElementById('debug-panel');
+      if (panel) {
+        panel.classList.toggle('hidden');
+        console.log('Debug panel toggled');
+      } else {
+        console.error('Debug panel not found!');
+      }
+    }
+
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, setting up event listeners...');
+      
+      const form = document.getElementById('research-form');
+      const statusEl = document.getElementById('status');
+      const clarifyingQuestionsEl = document.getElementById('clarifying-questions');
+      const questionsListEl = document.getElementById('questions-list');
+      const queryConfirmationEl = document.getElementById('query-confirmation');
+      const queriesEditorEl = document.getElementById('queries-editor');
+      const planEl = document.getElementById('plan');
+      const planList = document.getElementById('plan-list');
+      const stepsEl = document.getElementById('steps');
+      const stepsList = document.getElementById('steps-list');
+      const reportEl = document.getElementById('report');
+      const reportContent = document.getElementById('report-content');
+      const settingsPanel = document.getElementById('settings-panel');
+
+      // Debug logging
+      console.log('Settings panel element:', settingsPanel);
+
+  let currentTaskId = null;
+      let pollTimer = null;
+      let currentQueries = [];
+  let lastReportMarkdown = '';
+  let lastTopic = '';
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function showClarifyingQuestions(questions) {
+      questionsListEl.innerHTML = '';
+      questions.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = 'question-item';
+        
+        let inputHtml = '';
+        if (q.type === 'multiple_choice' && q.options) {
+          // Create multiple choice question
+          inputHtml = `
+            <select id="question-${index}" class="question-select">
+              <option value="">Please select an option...</option>
+              ${q.options.map((option, optIndex) => `<option value="${option}">${option}</option>`).join('')}
+            </select>
+          `;
+        } else {
+          // Create text input question (default)
+          inputHtml = `
+            <textarea id="question-${index}" rows="2" placeholder="Your answer..." class="question-input"></textarea>
+          `;
+        }
+        
+        div.innerHTML = `
+          <label for="question-${index}" class="question-label">
+            ${q.question}
+            ${q.type === 'multiple_choice' ? '<span class="question-type-badge">Multiple Choice</span>' : '<span class="question-type-badge">Text Input</span>'}
+          </label>
+          ${q.context ? `<p class="question-context">${q.context}</p>` : ''}
+          ${inputHtml}
+        `;
+        questionsListEl.appendChild(div);
+      });
+      clarifyingQuestionsEl.classList.remove('hidden');
+    }
+
+    function showQueryConfirmation(queries) {
+      currentQueries = queries;
+      queriesEditorEl.innerHTML = '';
+      queries.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = 'query-item';
+        div.innerHTML = `
+          <input type="text" value="${q.query}" data-index="${index}" />
+          <button onclick="removeQuery(${index})" class="remove-btn">Remove</button>
+        `;
+        queriesEditorEl.appendChild(div);
+      });
+      queryConfirmationEl.classList.remove('hidden');
+    }
+
+    function removeQuery(index) {
+      currentQueries.splice(index, 1);
+      showQueryConfirmation(currentQueries);
+    }
+
+    window.removeQuery = removeQuery;
+
+    function renderPlan(plan) {
+      planList.innerHTML = '';
+      if (!plan || !plan.queries) return;
+      plan.queries.forEach(q => {
+        const li = document.createElement('li');
+        li.textContent = q.query + (q.rationale ? ' — ' + q.rationale : '');
+        planList.appendChild(li);
+      });
+      planEl.classList.remove('hidden');
+    }
+
+    function renderSteps(steps) {
+      stepsList.innerHTML = '';
+      if (!steps) return;
+      steps.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'step';
+        div.innerHTML = `<h3>${s.query}</h3>`;
+        const ul = document.createElement('ul');
+        s.hits.slice(0, 5).forEach(h => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${h.url}" target="_blank" rel="noopener">${h.title}</a><div class="snippet">${h.snippet || ''}</div>`;
+          ul.appendChild(li);
+        });
+        div.appendChild(ul);
+        stepsList.appendChild(div);
+      });
+      stepsEl.classList.remove('hidden');
+    }
+
+    function renderReport(md) {
+      lastReportMarkdown = md || '';
+      // Use marked.js to parse full markdown content including tables
+      try {
+        const htmlContent = marked.parse(md);
+        reportContent.innerHTML = htmlContent;
+      } catch (e) {
+        console.error('Error parsing markdown:', e);
+        // Fallback to basic markdown parsing if marked.js fails
+        const escaped = md
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        const withLinks = escaped.replace(/\[(.*?)\]\((https?:[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1<\/a>');
+        const withHeaders = withLinks.replace(/^# (.*$)/gim, '<h1>$1<\/h1>')
+          .replace(/^## (.*$)/gim, '<h2>$1<\/h2>')
+          .replace(/^### (.*$)/gim, '<h3>$1<\/h3>');
+        const withParagraphs = withHeaders.replace(/\n\n/g, '<br/><br/>' );
+        reportContent.innerHTML = withParagraphs;
+      }
+      reportEl.classList.remove('hidden');
+    }
+
+    function slugify(text) {
+      return (text || '').toString().toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 60) || 'deep-research-report';
+    }
+
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportMarkdown() {
+      if (!lastReportMarkdown) {
+        alert('No report available to export yet.');
+        return;
+      }
+      const name = slugify(lastTopic);
+      downloadFile(`${name}.md`, lastReportMarkdown, 'text/markdown;charset=utf-8');
+    }
+
+    function exportHTML() {
+      const content = document.getElementById('report-content').innerHTML;
+      if (!content) {
+        alert('No report available to export yet.');
+        return;
+      }
+      const name = slugify(lastTopic);
+      const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deep Research Report</title>
+  <style>
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:#0b1020; color:#e7ecff; margin:24px; }
+    .markdown h1,.markdown h2,.markdown h3 { color:#dfe6ff; }
+    .markdown h1 { font-size:28px; border-bottom:2px solid #3a4680; padding-bottom:8px; }
+    .markdown h2 { font-size:24px; border-bottom:1px solid #2a3660; padding-bottom:6px; }
+    .markdown p { line-height:1.6; }
+    .markdown a { color:#8bb3ff; text-decoration:none; }
+    .markdown a:hover { text-decoration:underline; }
+    .markdown code { background:#0f1430; border:1px solid #2a3660; padding:2px 6px; border-radius:4px; }
+    .markdown pre { background:#0f1430; border:1px solid #2a3660; border-radius:6px; padding:16px; overflow:auto; }
+    .markdown table { width:100%; border-collapse:collapse; background:#141b34; border:1px solid #202a4a; border-radius:6px; overflow:hidden; }
+    .markdown th,.markdown td { padding:12px 16px; border-bottom:1px solid #202a4a; }
+    .markdown th { background:#1b2450; }
+    .markdown blockquote { border-left:4px solid #4f6df5; padding:12px 16px; background:#141b34; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <article class="markdown">${content}</article>
+</body>
+</html>`;
+      downloadFile(`${name}.html`, html, 'text/html;charset=utf-8');
+    }
+
+    async function exportPDF() {
+      const article = document.getElementById('report-content');
+      if (!article || !article.innerHTML.trim()) {
+        alert('No report available to export yet.');
+        return;
+      }
+      const name = slugify(lastTopic);
+      const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     `${name}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0b1020' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      try {
+        await html2pdf().set(opt).from(article).save();
+      } catch (err) {
+        console.error('Failed to export PDF:', err);
+        alert('Failed to export PDF.');
+      }
+    }
+
+    async function updateDebugInfo() {
+      if (!currentTaskId) {
+        document.getElementById('debug-content').innerHTML = '<p>No active research task. Start a research task to see debug information.</p>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/research/${currentTaskId}`);
+        const progress = await res.json();
+        
+        let debugHtml = '<div class="debug-section">';
+        
+        if (progress.debug_clarifying_prompt) {
+          debugHtml += `
+            <h3>Clarifying Questions Prompt</h3>
+            <pre class="debug-prompt">${escapeHtml(progress.debug_clarifying_prompt)}</pre>
+          `;
+        }
+        
+        if (progress.debug_clarifying_response) {
+          debugHtml += `
+            <h3>LLM Clarifying Questions Response</h3>
+            <pre class="debug-response">${escapeHtml(progress.debug_clarifying_response)}</pre>
+          `;
+        }
+        
+        if (progress.debug_plan_prompt) {
+          debugHtml += `
+            <h3>Planning Prompt</h3>
+            <pre class="debug-prompt">${escapeHtml(progress.debug_plan_prompt)}</pre>
+          `;
+        }
+        
+        if (progress.debug_plan_response) {
+          debugHtml += `
+            <h3>LLM Planning Response</h3>
+            <pre class="debug-response">${escapeHtml(progress.debug_plan_response)}</pre>
+          `;
+        }
+        
+        if (progress.debug_report_prompt) {
+          debugHtml += `
+            <h3>Reporting Prompt</h3>
+            <pre class="debug-prompt">${escapeHtml(progress.debug_report_prompt)}</pre>
+          `;
+        }
+        
+        if (progress.debug_report_response) {
+          debugHtml += `
+            <h3>LLM Reporting Response</h3>
+            <pre class="debug-response">${escapeHtml(progress.debug_report_response)}</pre>
+          `;
+        }
+        
+        if (!progress.debug_clarifying_prompt && !progress.debug_plan_prompt && !progress.debug_report_prompt) {
+          debugHtml += '<p>No debug information available yet. The research task may still be in progress.</p>';
+        }
+        
+        debugHtml += '</div>';
+        document.getElementById('debug-content').innerHTML = debugHtml;
+      } catch (e) {
+        console.error('Error loading debug info:', e);
+        document.getElementById('debug-content').innerHTML = '<p>Error loading debug information.</p>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function poll() {
+      if (!currentTaskId) return;
+      try {
+        const res = await fetch(`${API_BASE}/research/${currentTaskId}`);
+        const data = await res.json();
+        const p = data.progress;
+        setStatus(`${p.status}: ${p.message || ''}`);
+        
+        if (p.status === 'awaiting_clarification' && p.clarifying_questions && p.awaiting_clarification) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          showClarifyingQuestions(p.clarifying_questions.questions);
+        } else if (p.status === 'awaiting_confirmation' && p.plan && p.awaiting_confirmation) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          showQueryConfirmation(p.plan.queries);
+        } else {
+          if (p.plan) renderPlan(p.plan);
+          if (p.steps) renderSteps(p.steps);
+          if (p.report_markdown) renderReport(p.report_markdown);
+          
+          // Update debug information during polling if debug panel is open
+          if (!document.getElementById('debug-panel').classList.contains('hidden')) {
+            updateDebugInfo();
+          }
+          
+          if (p.status === 'done' || p.status === 'error') {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        setStatus('Error updating progress.');
+      }
+    }
+
+    // Settings functionality
+    async function loadSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/settings`);
+        const settings = await res.json();
+        
+  document.getElementById('llm-provider').value = settings.llm_provider;
+  document.getElementById('search-provider').value = settings.search_provider;
+        document.getElementById('ollama-url').value = settings.ollama_base_url;
+        document.getElementById('searxng-url').value = settings.searxng_base_url;
+        document.getElementById('searxng-language').value = settings.searxng_language || 'en-US';
+        document.getElementById('searxng-results').value = settings.searxng_results || 8;
+        document.getElementById('duckduckgo-region').value = settings.duckduckgo_region || 'us-en';
+        document.getElementById('duckduckgo-results').value = settings.duckduckgo_results || 8;
+        document.getElementById('openrouter-api-key').value = settings.openrouter_api_key || '';
+        document.getElementById('openrouter-max-tokens').value = settings.openrouter_max_tokens || 4096;
+  // New providers
+  const apply = (id, value, fallback='') => { const el = document.getElementById(id); if (el) el.value = value ?? fallback; };
+  apply('openai-api-key', settings.openai_api_key, '');
+  apply('openai-thinking-model', settings.openai_thinking_model, 'gpt-4o-mini');
+  apply('openai-task-model', settings.openai_task_model, 'gpt-4o-mini');
+  apply('openai-max-tokens', settings.openai_max_tokens, 4096);
+
+  apply('anthropic-api-key', settings.anthropic_api_key, '');
+  apply('anthropic-thinking-model', settings.anthropic_thinking_model, 'claude-3-5-sonnet-latest');
+  apply('anthropic-task-model', settings.anthropic_task_model, 'claude-3-5-sonnet-latest');
+  apply('anthropic-max-tokens', settings.anthropic_max_tokens, 4096);
+
+  apply('gemini-api-key', settings.gemini_api_key, '');
+  apply('gemini-thinking-model', settings.gemini_thinking_model, 'gemini-1.5-pro-latest');
+  apply('gemini-task-model', settings.gemini_task_model, 'gemini-1.5-pro-latest');
+  apply('gemini-max-tokens', settings.gemini_max_tokens, 4096);
+
+  apply('mistral-api-key', settings.mistral_api_key, '');
+  apply('mistral-thinking-model', settings.mistral_thinking_model, 'mistral-large-latest');
+  apply('mistral-task-model', settings.mistral_task_model, 'mistral-large-latest');
+  apply('mistral-max-tokens', settings.mistral_max_tokens, 4096);
+
+  apply('groq-api-key', settings.groq_api_key, '');
+  apply('groq-thinking-model', settings.groq_thinking_model, 'llama-3.1-70b-versatile');
+  apply('groq-task-model', settings.groq_task_model, 'llama-3.1-70b-versatile');
+  apply('groq-max-tokens', settings.groq_max_tokens, 4096);
+  const lmstudioThinking = settings.lmstudio_thinking_model || 'deepseek-r1:1.5b';
+  const lmstudioTask = settings.lmstudio_task_model || 'llama3.1:8b';
+  // LMStudio
+  apply('lmstudio-base-url', settings.lmstudio_base_url, 'http://localhost:1234/v1');
+  apply('lmstudio-max-tokens', settings.lmstudio_max_tokens, 2048);
+  await loadLMStudioModels(lmstudioThinking, lmstudioTask);
+        
+        // Show/hide provider settings based on selection
+        toggleProviderSettings(settings.llm_provider);
+        toggleSearchProviderSettings(settings.search_provider);
+        
+        // Load available models
+        if (settings.llm_provider === 'ollama') {
+          await loadOllamaModels();
+          document.getElementById('thinking-model').value = settings.ollama_thinking_model;
+          document.getElementById('task-model').value = settings.ollama_task_model;
+        } else if (settings.llm_provider === 'openrouter') {
+          await loadOpenRouterModels();
+          document.getElementById('openrouter-thinking-model').value = settings.openrouter_thinking_model;
+          document.getElementById('openrouter-task-model').value = settings.openrouter_task_model;
+          document.getElementById('openrouter-max-tokens').value = settings.openrouter_max_tokens;
+        }
+      } catch (e) {
+        console.error('Failed to load settings:', e);
+      }
+    }
+
+    function toggleProviderSettings(provider) {
+      const sections = [
+        'ollama-settings', 'openrouter-settings', 'openai-settings', 'anthropic-settings',
+        'gemini-settings', 'mistral-settings', 'groq-settings', 'lmstudio-settings'
+      ];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(`${provider}-settings`);
+      if (target) target.classList.remove('hidden');
+
+      if (provider === 'lmstudio') {
+        const thinkValue = document.getElementById('lmstudio-thinking-model')?.value || '';
+        const taskValue = document.getElementById('lmstudio-task-model')?.value || '';
+        loadLMStudioModels(thinkValue, taskValue);
+      }
+    }
+
+    function toggleSearchProviderSettings(provider) {
+      const sections = ['searxng-search-settings', 'duckduckgo-search-settings'];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(`${provider}-search-settings`);
+      if (target) target.classList.remove('hidden');
+    }
+
+    async function loadOllamaModels() {
+      try {
+        const res = await fetch(`${API_BASE}/settings/ollama/models`);
+        const data = await res.json();
+        const thinkingSelect = document.getElementById('thinking-model');
+        const taskSelect = document.getElementById('task-model');
+        
+        [thinkingSelect, taskSelect].forEach(select => {
+          select.innerHTML = '';
+          data.models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model;
+            option.textContent = model;
+            select.appendChild(option);
+          });
+        });
+      } catch (e) {
+        console.error('Failed to load Ollama models:', e);
+      }
+    }
+
+    async function loadOpenRouterModels() {
+      try {
+        // Since OpenRouter models are now text inputs, we can set popular default values
+        const thinkingInput = document.getElementById('openrouter-thinking-model');
+        const taskInput = document.getElementById('openrouter-task-model');
+        
+        // Set default values if empty
+        if (!thinkingInput.value) {
+          thinkingInput.value = 'anthropic/claude-3.5-sonnet';
+        }
+        if (!taskInput.value) {
+          taskInput.value = 'anthropic/claude-3.5-sonnet';
+        }
+        
+        console.log('OpenRouter model inputs updated with defaults');
+      } catch (e) {
+        console.error('Error setting OpenRouter model defaults:', e);
+      }
+    }
+
+    async function loadLMStudioModels(preferredThinking = '', preferredTask = '', force = false) {
+      try {
+        const res = await fetch(`${API_BASE}/settings/lmstudio/models${force ? '?force_refresh=true' : ''}`);
+        const data = await res.json();
+        const models = Array.isArray(data.models) ? data.models : [];
+        const thinkingSelect = document.getElementById('lmstudio-thinking-model');
+        const taskSelect = document.getElementById('lmstudio-task-model');
+
+        const populate = (select, selectedValue) => {
+          if (!select) return;
+          const options = new Set(models);
+          select.innerHTML = '';
+          const addOption = (value, label = value) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            select.appendChild(option);
+          };
+
+          if (models.length === 0) {
+            if (selectedValue) {
+              addOption(selectedValue);
+              select.value = selectedValue;
+            }
+            return;
+          }
+
+          addOption('', 'Select a model...');
+          models.forEach(model => addOption(model));
+          if (selectedValue && !options.has(selectedValue)) {
+            addOption(selectedValue, `${selectedValue} (custom)`);
+          }
+          select.value = selectedValue || '';
+        };
+
+        populate(thinkingSelect, preferredThinking);
+        populate(taskSelect, preferredTask);
+      } catch (e) {
+        console.error('Failed to load LMStudio models:', e);
+        const thinkingSelect = document.getElementById('lmstudio-thinking-model');
+        const taskSelect = document.getElementById('lmstudio-task-model');
+        if (thinkingSelect && preferredThinking) {
+          if (!Array.from(thinkingSelect.options).some(o => o.value === preferredThinking)) {
+            const opt = document.createElement('option');
+            opt.value = preferredThinking;
+            opt.textContent = preferredThinking;
+            thinkingSelect.appendChild(opt);
+          }
+          thinkingSelect.value = preferredThinking;
+        }
+        if (taskSelect && preferredTask) {
+          if (!Array.from(taskSelect.options).some(o => o.value === preferredTask)) {
+            const opt = document.createElement('option');
+            opt.value = preferredTask;
+            opt.textContent = preferredTask;
+            taskSelect.appendChild(opt);
+          }
+          taskSelect.value = preferredTask;
+        }
+      }
+    }
+
+    async function saveSettings() {
+      try {
+        const provider = document.getElementById('llm-provider').value;
+        const searchProvider = document.getElementById('search-provider').value;
+        const update = {
+          llm_provider: provider,
+          search_provider: searchProvider,
+        };
+
+        // Add search provider settings
+        if (searchProvider === 'searxng') {
+          update.searxng_base_url = document.getElementById('searxng-url').value;
+          update.searxng_language = document.getElementById('searxng-language').value;
+          update.searxng_results = parseInt(document.getElementById('searxng-results').value) || 8;
+        } else if (searchProvider === 'duckduckgo') {
+          update.duckduckgo_region = document.getElementById('duckduckgo-region').value;
+          update.duckduckgo_results = parseInt(document.getElementById('duckduckgo-results').value) || 8;
+        }
+
+        if (provider === 'ollama') {
+          update.ollama_base_url = document.getElementById('ollama-url').value;
+          update.ollama_thinking_model = document.getElementById('thinking-model').value;
+          update.ollama_task_model = document.getElementById('task-model').value;
+        } else if (provider === 'openrouter') {
+          update.openrouter_api_key = document.getElementById('openrouter-api-key').value;
+          update.openrouter_thinking_model = document.getElementById('openrouter-thinking-model').value;
+          update.openrouter_task_model = document.getElementById('openrouter-task-model').value;
+          update.openrouter_max_tokens = parseInt(document.getElementById('openrouter-max-tokens').value) || 4096;
+        } else if (provider === 'openai') {
+          update.openai_api_key = document.getElementById('openai-api-key').value;
+          update.openai_thinking_model = document.getElementById('openai-thinking-model').value;
+          update.openai_task_model = document.getElementById('openai-task-model').value;
+          update.openai_max_tokens = parseInt(document.getElementById('openai-max-tokens').value) || 4096;
+        } else if (provider === 'anthropic') {
+          update.anthropic_api_key = document.getElementById('anthropic-api-key').value;
+          update.anthropic_thinking_model = document.getElementById('anthropic-thinking-model').value;
+          update.anthropic_task_model = document.getElementById('anthropic-task-model').value;
+          update.anthropic_max_tokens = parseInt(document.getElementById('anthropic-max-tokens').value) || 4096;
+        } else if (provider === 'gemini') {
+          update.gemini_api_key = document.getElementById('gemini-api-key').value;
+          update.gemini_thinking_model = document.getElementById('gemini-thinking-model').value;
+          update.gemini_task_model = document.getElementById('gemini-task-model').value;
+          update.gemini_max_tokens = parseInt(document.getElementById('gemini-max-tokens').value) || 4096;
+        } else if (provider === 'mistral') {
+          update.mistral_api_key = document.getElementById('mistral-api-key').value;
+          update.mistral_thinking_model = document.getElementById('mistral-thinking-model').value;
+          update.mistral_task_model = document.getElementById('mistral-task-model').value;
+          update.mistral_max_tokens = parseInt(document.getElementById('mistral-max-tokens').value) || 4096;
+        } else if (provider === 'groq') {
+          update.groq_api_key = document.getElementById('groq-api-key').value;
+          update.groq_thinking_model = document.getElementById('groq-thinking-model').value;
+          update.groq_task_model = document.getElementById('groq-task-model').value;
+          update.groq_max_tokens = parseInt(document.getElementById('groq-max-tokens').value) || 4096;
+        } else if (provider === 'lmstudio') {
+          update.lmstudio_base_url = document.getElementById('lmstudio-base-url').value;
+          update.lmstudio_thinking_model = document.getElementById('lmstudio-thinking-model').value;
+          update.lmstudio_task_model = document.getElementById('lmstudio-task-model').value;
+          update.lmstudio_max_tokens = parseInt(document.getElementById('lmstudio-max-tokens').value) || 2048;
+        }
+        
+        const res = await fetch(`${API_BASE}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(update)
+        });
+        
+        if (res.ok) {
+          alert('Settings saved successfully!');
+          settingsPanel.classList.add('hidden');
+        }
+      } catch (e) {
+        console.error('Failed to save settings:', e);
+      }
+    }
+
+    // Event listeners
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+  const topic = document.getElementById('topic').value.trim();
+      const depth = document.getElementById('depth').value;
+      if (!topic) return;
+  lastTopic = topic;
+
+      // Reset UI
+      planEl.classList.add('hidden');
+      stepsEl.classList.add('hidden');
+      reportEl.classList.add('hidden');
+      queryConfirmationEl.classList.add('hidden');
+      planList.innerHTML = '';
+      stepsList.innerHTML = '';
+      reportContent.innerHTML = '';
+
+      setStatus('Starting…');
+      try {
+        const res = await fetch(`${API_BASE}/research/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic, depth })
+        });
+        const data = await res.json();
+        currentTaskId = data.task_id;
+        setStatus(`${data.status}`);
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(poll, 1500);
+      } catch (e) {
+        console.error(e);
+        setStatus('Failed to start research.');
+      }
+    });
+
+    // Clarification event listeners
+    document.getElementById('submit-clarification-btn').addEventListener('click', async () => {
+      // Collect answers from both textareas and select elements
+      const answers = [];
+      const inputs = questionsListEl.querySelectorAll('textarea, select');
+      inputs.forEach(input => {
+        const value = input.value.trim();
+        answers.push(value || 'No specific preference');
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/research/${currentTaskId}/clarify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers })
+        });
+        
+        if (res.ok) {
+          clarifyingQuestionsEl.classList.add('hidden');
+          setStatus('Creating enhanced search plan with your input...');
+          pollTimer = setInterval(poll, 2000);
+        }
+      } catch (e) {
+        console.error('Error submitting clarification:', e);
+      }
+    });
+
+    document.getElementById('skip-clarification-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/research/${currentTaskId}/clarify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: [] })
+        });
+        
+        if (res.ok) {
+          clarifyingQuestionsEl.classList.add('hidden');
+          setStatus('Creating search plan...');
+          pollTimer = setInterval(poll, 2000);
+        }
+      } catch (e) {
+        console.error('Error skipping clarification:', e);
+      }
+    });
+
+    document.getElementById('confirm-queries-btn').addEventListener('click', async () => {
+      // Collect updated queries
+      const inputs = queriesEditorEl.querySelectorAll('input[data-index]');
+      const approvedQueries = Array.from(inputs).map(input => ({
+        query: input.value.trim(),
+        rationale: null
+      })).filter(q => q.query);
+
+      try {
+        const res = await fetch(`${API_BASE}/research/${currentTaskId}/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approved_queries: approvedQueries })
+        });
+        
+        if (res.ok) {
+          queryConfirmationEl.classList.add('hidden');
+          setStatus('Executing web searches...');
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = setInterval(poll, 1500);
+        }
+      } catch (e) {
+        console.error('Failed to confirm queries:', e);
+      }
+    });
+
+    document.getElementById('add-query-btn').addEventListener('click', () => {
+      const newQuery = { query: '', rationale: null };
+      currentQueries.push(newQuery);
+      showQueryConfirmation(currentQueries);
+    });
+
+    document.getElementById('cancel-queries-btn').addEventListener('click', () => {
+      queryConfirmationEl.classList.add('hidden');
+      setStatus('Research cancelled.');
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    });
+
+    // Settings event listeners
+    document.getElementById('settings-btn').addEventListener('click', function() {
+      console.log('Settings button clicked');
+      try {
+        loadSettings();
+        toggleSettings();
+      } catch (e) {
+        console.error('Error opening settings:', e);
+      }
+    });
+
+    // Debug event listeners
+    document.getElementById('debug-btn').addEventListener('click', async function() {
+      console.log('Debug button clicked');
+      try {
+        toggleDebug();
+        await updateDebugInfo();
+      } catch (e) {
+        console.error('Error opening debug:', e);
+      }
+    });
+
+    // Settings form submission
+    document.getElementById('save-settings').addEventListener('click', saveSettings);
+
+    document.getElementById('llm-provider').addEventListener('change', (e) => {
+      toggleProviderSettings(e.target.value);
+    });
+
+    document.getElementById('search-provider').addEventListener('change', (e) => {
+      toggleSearchProviderSettings(e.target.value);
+    });
+
+    document.getElementById('refresh-ollama-models').addEventListener('click', loadOllamaModels);
+
+    document.getElementById('refresh-openrouter-models').addEventListener('click', loadOpenRouterModels);
+    document.getElementById('refresh-lmstudio-models').addEventListener('click', () => {
+      const thinking = document.getElementById('lmstudio-thinking-model')?.value || '';
+      const task = document.getElementById('lmstudio-task-model')?.value || '';
+      loadLMStudioModels(thinking, task, true);
+    });
+
+    // ESC key support to close settings panel
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !settingsPanel.classList.contains('hidden')) {
+        settingsPanel.classList.add('hidden');
+      }
+    });
+
+    // Export buttons
+    document.getElementById('export-md').addEventListener('click', exportMarkdown);
+    document.getElementById('export-html').addEventListener('click', exportHTML);
+    document.getElementById('export-pdf').addEventListener('click', exportPDF);
+
+    }); // Close DOMContentLoaded event listener
+  </script>
+</body>
+</html>
