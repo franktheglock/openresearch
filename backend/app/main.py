@@ -11,7 +11,7 @@ from .routers.settings import router as settings_router
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Deep Research API", version="0.1.0")
+    app = FastAPI(title="OpenResearch API", version="0.1.0")
 
     # CORS
     app.add_middleware(

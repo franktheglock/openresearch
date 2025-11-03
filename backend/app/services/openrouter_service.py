@@ -24,7 +24,7 @@ class OpenRouterService:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "http://localhost:8081",  # Required by OpenRouter
-            "X-Title": "Deep Research App"  # Optional but recommended
+            "X-Title": "OpenResearch"  # Optional but recommended
         }
         
         payload = {

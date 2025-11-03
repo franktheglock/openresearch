@@ -1,68 +1,128 @@
-# Deep Research App - Backend# Deep Research App - Backend
+# OpenResearch - Backend# OpenResearch - Backend
 
 
 
-FastAPI backend for the Deep Research App. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.FastAPI backend for the Deep Research App. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.
+FastAPI backend for OpenResearch. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.FastAPI backend for OpenResearch. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.
 
 
 
-## Quick Start## Quick Start
+## Quick Start
 
 
+
+### Windows (One-click)## Quick Start## Quick Start
+
+```bash
+
+start.bat
+
+```
 
 ### Windows (One-click)### Windows (One-click)
 
-```bash```bash
+### Manual Setup
 
-start.batstart.bat
+```bash```bash```bash
 
-``````
+# Install dependencies
 
-
-
-### Manual Setup### Manual Setup
-
-```bash```bash
-
-# Install dependencies# Install dependencies
-
-pip install -r requirements.txtpip install -r requirements.txt
+pip install -r requirements.txtstart.batstart.bat
 
 
 
-# Start server# Start server
+# Start server``````
 
-uvicorn app.main:app --host 0.0.0.0 --port 8081 --reloaduvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
 
-``````
-
-
-
-## Configuration## Configuration
+```
 
 
 
-See the main [README.md](../README.md) for detailed configuration instructions.See the main [README.md](../README.md) for detailed configuration instructions.
+## Configuration### Manual Setup### Manual Setup
 
 
 
-## API Documentation## API Documentation
+See the main [README.md](../README.md) for detailed configuration instructions.```bash```bash
 
 
 
-Once running, visit `http://localhost:8081/docs` for interactive API documentation.Once running, visit `http://localhost:8081/docs` for interactive API documentation.
+## API Documentation# Install dependencies# Install dependencies
 
 
 
-## Development## Development
+Once running, visit `http://localhost:8081/docs` for interactive API documentation.pip install -r requirements.txtpip install -r requirements.txt
 
 
 
-### Project Structure### Project Structure
+## Development
 
-``````
 
-backend/backend/
+
+### Project Structure# Start server# Start server
+
+```
+
+backend/uvicorn app.main:app --host 0.0.0.0 --port 8081 --reloaduvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+
+├── app/
+
+│   ├── config.py          # Settings & environment variables``````
+
+│   ├── main.py           # FastAPI application
+
+│   ├── models/           # Pydantic data models
+
+│   ├── routers/          # API endpoints
+
+│   └── services/         # LLM & search service integrations## Configuration## Configuration
+
+├── requirements.txt      # Python dependencies
+
+├── .env.example         # Environment template
+
+└── start.bat           # Windows startup script
+
+```See the main [README.md](../README.md) for detailed configuration instructions.See the main [README.md](../README.md) for detailed configuration instructions.
+
+
+
+### Adding New Providers
+
+
+
+1. Create service in `app/services/`## API Documentation## API Documentation
+
+2. Add config fields in `app/config.py`
+
+3. Update models in `app/models/settings.py`
+
+4. Add router endpoints in `app/routers/settings.py`
+
+5. Update frontend UI in `../frontend/index.html`Once running, visit `http://localhost:8081/docs` for interactive API documentation.Once running, visit `http://localhost:8081/docs` for interactive API documentation.
+
+
+
+## Dependencies
+
+
+
+- **FastAPI**: Web framework## Development## Development
+
+- **Pydantic**: Data validation
+
+- **Requests**: HTTP client
+
+- **BeautifulSoup4**: HTML parsing (for DuckDuckGo)
+
+- **Uvicorn**: ASGI server### Project Structure### Project Structure
+
+
+
+---``````
+
+
+
+*For complete setup instructions, configuration details, and troubleshooting, see the main [README.md](../README.md)*backend/backend/
 
 ├── app/├── app/
 

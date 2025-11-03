@@ -1,11 +1,11 @@
 @echo off
-REM start.bat - Complete setup and launch script for Deep Research App
+REM start.bat - Complete setup and launch script for OpenResearch
 REM Creates venv, installs dependencies, starts backend, and opens browser
 
 setlocal enabledelayedexpansion
 
 echo ========================================
-echo   Deep Research App - Complete Setup
+echo   OpenResearch - Complete Setup
 echo ========================================
 
 :: Check if venv exists, create if not
@@ -41,7 +41,7 @@ if errorlevel 1 (
 
 :: Start backend in background
 echo Starting backend server...
-start "Deep Research Backend" cmd /c "start_backend.bat --bg --reload"
+start "OpenResearch Backend" cmd /c "start_backend.bat --bg --reload"
 
 :: Wait a moment for server to start
 timeout /t 3 /nobreak >nul
@@ -59,7 +59,7 @@ echo.
 echo If the page doesn't load, the server might still be starting.
 echo Try refreshing the page in a few seconds.
 echo.
-echo To stop the server later, close the "Deep Research Backend" command window.
+echo To stop the server later, close the "OpenResearch Backend" command window.
 echo ========================================
 
 pause

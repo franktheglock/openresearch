@@ -1,8 +1,8 @@
-# Deep Research App
+# OpenResearch
 
 A comprehensive AI-powered research assistant that combines multiple LLM providers with web search capabilities. Generate detailed research reports with intelligent question clarification, search planning, and multi-format export.
 
-![Deep Research App](https://img.shields.io/badge/Python-3.10+-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
+![OpenResearch](https://img.shields.io/badge/Python-3.10+-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ## ✨ Features
 
@@ -46,8 +46,8 @@ A comprehensive AI-powered research assistant that combines multiple LLM provide
 ### One-Click Setup (Windows)
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/deep-research-app.git
-cd deep-research-app
+git clone https://github.com/franktheglock/openresearch.git
+cd openresearch
 
 # Run the complete setup script
 backend\start.bat
@@ -196,7 +196,7 @@ No setup required - works out of the box!
 ## 🏗️ Architecture
 
 ```
-deep-research-app/
+openresearch/
 ├── backend/                 # FastAPI backend
 │   ├── app/
 │   │   ├── config.py       # Settings management
