@@ -1,66 +1,128 @@
-# Deep Research App - Backend
+# Deep Research App - Backend# Deep Research App - Backend
 
-FastAPI backend for the Deep Research App. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.
 
-## Quick Start
 
-### Windows (One-click)
-```bash
-start.bat
-```
+FastAPI backend for the Deep Research App. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.FastAPI backend for the Deep Research App. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.
 
-### Manual Setup
-```bash
-# Install dependencies
-pip install -r requirements.txt
 
-# Start server
-uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
-```
 
-## Configuration
+## Quick Start## Quick Start
 
-See the main [README.md](../README.md) for detailed configuration instructions.
 
-## API Documentation
 
-Once running, visit `http://localhost:8081/docs` for interactive API documentation.
+### Windows (One-click)### Windows (One-click)
 
-## Development
+```bash```bash
 
-### Project Structure
-```
-backend/
-├── app/
-│   ├── config.py          # Settings & environment variables
-│   ├── main.py           # FastAPI application
-│   ├── models/           # Pydantic data models
-│   ├── routers/          # API endpoints
-│   └── services/         # LLM & search service integrations
-├── requirements.txt      # Python dependencies
-├── .env.example         # Environment template
-└── start.bat           # Windows startup script
-```
+start.batstart.bat
 
-### Adding New Providers
+``````
 
-1. Create service in `app/services/`
-2. Add config fields in `app/config.py`
-3. Update models in `app/models/settings.py`
-4. Add router endpoints in `app/routers/settings.py`
-5. Update frontend UI in `../frontend/index.html`
 
-## Dependencies
 
-- **FastAPI**: Web framework
-- **Pydantic**: Data validation
-- **Requests**: HTTP client
-- **BeautifulSoup4**: HTML parsing (for DuckDuckGo)
-- **Uvicorn**: ASGI server
+### Manual Setup### Manual Setup
 
-## Requirements
+```bash```bash
 
-- Python 3.10+
+# Install dependencies# Install dependencies
+
+pip install -r requirements.txtpip install -r requirements.txt
+
+
+
+# Start server# Start server
+
+uvicorn app.main:app --host 0.0.0.0 --port 8081 --reloaduvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+
+``````
+
+
+
+## Configuration## Configuration
+
+
+
+See the main [README.md](../README.md) for detailed configuration instructions.See the main [README.md](../README.md) for detailed configuration instructions.
+
+
+
+## API Documentation## API Documentation
+
+
+
+Once running, visit `http://localhost:8081/docs` for interactive API documentation.Once running, visit `http://localhost:8081/docs` for interactive API documentation.
+
+
+
+## Development## Development
+
+
+
+### Project Structure### Project Structure
+
+``````
+
+backend/backend/
+
+├── app/├── app/
+
+│   ├── config.py          # Settings & environment variables│   ├── config.py          # Settings & environment variables
+
+│   ├── main.py           # FastAPI application│   ├── main.py           # FastAPI application
+
+│   ├── models/           # Pydantic data models│   ├── models/           # Pydantic data models
+
+│   ├── routers/          # API endpoints│   ├── routers/          # API endpoints
+
+│   └── services/         # LLM & search service integrations│   └── services/         # LLM & search service integrations
+
+├── requirements.txt      # Python dependencies├── requirements.txt      # Python dependencies
+
+├── .env.example         # Environment template├── .env.example         # Environment template
+
+└── start.bat           # Windows startup script└── start.bat           # Windows startup script
+
+``````
+
+
+
+### Adding New Providers### Adding New Providers
+
+
+
+1. Create service in `app/services/`1. Create service in `app/services/`
+
+2. Add config fields in `app/config.py`2. Add config fields in `app/config.py`
+
+3. Update models in `app/models/settings.py`3. Update models in `app/models/settings.py`
+
+4. Add router endpoints in `app/routers/settings.py`4. Add router endpoints in `app/routers/settings.py`
+
+5. Update frontend UI in `../frontend/index.html`5. Update frontend UI in `../frontend/index.html`
+
+
+
+## Dependencies## Dependencies
+
+
+
+- **FastAPI**: Web framework- **FastAPI**: Web framework
+
+- **Pydantic**: Data validation- **Pydantic**: Data validation
+
+- **Requests**: HTTP client- **Requests**: HTTP client
+
+- **BeautifulSoup4**: HTML parsing (for DuckDuckGo)- **BeautifulSoup4**: HTML parsing (for DuckDuckGo)
+
+- **Uvicorn**: ASGI server- **Uvicorn**: ASGI server
+
+
+
+---## Requirements
+
+
+
+*For complete setup instructions, configuration details, and troubleshooting, see the main [README.md](../README.md)*- Python 3.10+
 - At least one LLM provider configured (see below)
 - SearxNG instance accessible (optional, for web search)
 
