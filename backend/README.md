@@ -1,6 +1,62 @@
-# Deep Research App
+# Deep Research App - Backend
 
-A comprehensive deep research application with Python FastAPI backend and HTML/CSS frontend. Supports multiple LLM providers (Ollama, OpenRouter, OpenAI, Anthropic, Gemini, Mistral, Groq, LMStudio) and SearxNG for web search.
+FastAPI backend for the Deep Research App. This directory contains the Python server that handles LLM interactions, search integration, and research orchestration.
+
+## Quick Start
+
+### Windows (One-click)
+```bash
+start.bat
+```
+
+### Manual Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Start server
+uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+```
+
+## Configuration
+
+See the main [README.md](../README.md) for detailed configuration instructions.
+
+## API Documentation
+
+Once running, visit `http://localhost:8081/docs` for interactive API documentation.
+
+## Development
+
+### Project Structure
+```
+backend/
+├── app/
+│   ├── config.py          # Settings & environment variables
+│   ├── main.py           # FastAPI application
+│   ├── models/           # Pydantic data models
+│   ├── routers/          # API endpoints
+│   └── services/         # LLM & search service integrations
+├── requirements.txt      # Python dependencies
+├── .env.example         # Environment template
+└── start.bat           # Windows startup script
+```
+
+### Adding New Providers
+
+1. Create service in `app/services/`
+2. Add config fields in `app/config.py`
+3. Update models in `app/models/settings.py`
+4. Add router endpoints in `app/routers/settings.py`
+5. Update frontend UI in `../frontend/index.html`
+
+## Dependencies
+
+- **FastAPI**: Web framework
+- **Pydantic**: Data validation
+- **Requests**: HTTP client
+- **BeautifulSoup4**: HTML parsing (for DuckDuckGo)
+- **Uvicorn**: ASGI server
 
 ## Requirements
 
