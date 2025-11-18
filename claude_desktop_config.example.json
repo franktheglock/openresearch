@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "openresearch": {
+      "command": "python",
+      "args": [
+        "C:\\Users\\claym\\Desktop\\deep reaserch\\backend\\mcp_server.py"
+      ],
+      "env": {
+        "OPENRESEARCH_API_URL": "http://localhost:8081"
+      }
+    }
+  }
+}

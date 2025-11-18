@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import uuid
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 
 from ..models.research import (
 	ResearchRequest,
@@ -155,10 +155,41 @@ def _fixed_make_plan_prompt(topic: str, depth: str, clarifying_answers: list[str
 	)
 
 
+
+def _task_cancelled(task_id: str) -> bool:
+	with _LOCK:
+		task = _TASKS.get(task_id)
+		return bool(task and task.cancelled)
+
+
+def _mark_completed(task_id: str):
+	with _LOCK:
+		task = _TASKS.get(task_id)
+		if task and not task.completed_at:
+			task.completed_at = datetime.utcnow()
+
+
+def cancel_task(task_id: str) -> bool:
+	with _LOCK:
+		task = _TASKS.get(task_id)
+		if not task:
+			return False
+		task.cancelled = True
+		task.status = "cancelled"
+		task.message = "Cancelled by client request"
+		task.awaiting_clarification = False
+		task.awaiting_confirmation = False
+	_mark_completed(task_id)
+	return True
+
+
 def start_research(req: ResearchRequest) -> str:
 	task_id = str(uuid.uuid4())
 	progress = ResearchProgress(
 		task_id=task_id,
+		topic=req.topic,
+		depth=req.depth,
+		metadata=req.metadata,
 		started_at=datetime.utcnow(),
 		status="starting",
 		message="Generating search plan",
@@ -229,6 +260,8 @@ def _continue_research(task_id: str):
 		
 		if not task or not task.plan:
 			return
+		if task.cancelled:
+			return
 		
 		# Search
 		steps: list[SearchStepResult] = []
@@ -237,6 +270,8 @@ def _continue_research(task_id: str):
 		print(f"{'='*80}")
 		
 		for i, q in enumerate(task.plan.queries, 1):
+			if _task_cancelled(task_id):
+				return
 			print(f"🔎 Query {i}/{len(task.plan.queries)}: {q.query}")
 			if q.rationale:
 				print(f"   💡 Rationale: {q.rationale}")
@@ -258,7 +293,7 @@ def _continue_research(task_id: str):
 
 		# Get topic and depth from the original request (we need to store this in the task)
 		topic = task.plan.topic
-		report_prompt = _make_report_prompt(topic, steps, "standard")  # Default depth
+		report_prompt = _make_report_prompt(topic, steps, task.depth)
 		llm_service = _get_llm_service()
 		report_md = llm_service.complete(report_prompt)
 
@@ -268,6 +303,7 @@ def _continue_research(task_id: str):
 			_TASKS[task_id].report_markdown = report_md
 			_TASKS[task_id].status = "done"
 			_TASKS[task_id].message = "Completed"
+		_mark_completed(task_id)
 		
 		# Terminal debug output
 		print(f"\n{'='*80}")
@@ -283,8 +319,10 @@ def _continue_research(task_id: str):
 		print(f"{'='*80}\n")
 	except Exception as e:
 		with _LOCK:
-			_TASKS[task_id].status = "error"
-			_TASKS[task_id].message = f"Failed: {e}"
+			if task_id in _TASKS:
+				_TASKS[task_id].status = "error"
+				_TASKS[task_id].message = f"Failed: {e}"
+		_mark_completed(task_id)
 
 
 def _continue_planning(task_id: str, clarifying_answers: list[str]):
@@ -296,12 +334,14 @@ def _continue_planning(task_id: str, clarifying_answers: list[str]):
 		
 		if not task or not task.clarifying_questions:
 			return
+		if task.cancelled:
+			return
 		
 		# Get the original topic and depth (we need to store these in the task)
 		topic = task.clarifying_questions.topic
 		
 		# Generate plan with clarifications
-		plan_prompt = _fixed_make_plan_prompt(topic, "standard", clarifying_answers)  # Default depth
+		plan_prompt = _fixed_make_plan_prompt(topic, task.depth, clarifying_answers)
 		llm_service = _get_llm_service()
 		plan_text = llm_service.think(plan_prompt)
 
@@ -321,8 +361,10 @@ def _continue_planning(task_id: str, clarifying_answers: list[str]):
 
 	except Exception as e:
 		with _LOCK:
-			_TASKS[task_id].status = "error"
-			_TASKS[task_id].message = f"Failed during planning: {e}"
+			if task_id in _TASKS:
+				_TASKS[task_id].status = "error"
+				_TASKS[task_id].message = f"Failed during planning: {e}"
+		_mark_completed(task_id)
 
 
 def _run_research(task_id: str, req: ResearchRequest):
@@ -331,6 +373,8 @@ def _run_research(task_id: str, req: ResearchRequest):
 		with _LOCK:
 			_TASKS[task_id].status = "clarifying"
 			_TASKS[task_id].message = "Asking clarifying questions"
+		if _task_cancelled(task_id):
+			return
 
 		clarifying_prompt = _make_clarifying_prompt(req.topic, req.depth)
 		llm_service = _get_llm_service()
@@ -415,8 +459,10 @@ def _run_research(task_id: str, req: ResearchRequest):
 		return
 	except Exception as e:
 		with _LOCK:
-			_TASKS[task_id].status = "error"
-			_TASKS[task_id].message = f"Failed: {e}"
+			if task_id in _TASKS:
+				_TASKS[task_id].status = "error"
+				_TASKS[task_id].message = f"Failed: {e}"
+		_mark_completed(task_id)
 
 
 def _parse_plan(plan_text: str, topic: str) -> SearchPlan:

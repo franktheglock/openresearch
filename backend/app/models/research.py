@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
 class ResearchRequest(BaseModel):
-	topic: str
-	depth: str = Field(default="standard", description="standard|deep|brief")
+    topic: str
+    depth: str = Field(default="standard", description="surface|standard|deep")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Opaque metadata echoed back in progress responses")
 
 
 class SearchQuery(BaseModel):
@@ -49,8 +50,13 @@ class SearchStepResult(BaseModel):
 
 class ResearchProgress(BaseModel):
     task_id: str
+    topic: str
+    depth: str
+    metadata: Optional[Dict[str, Any]] = None
     started_at: datetime
+    completed_at: Optional[datetime] = None
     status: str
+    cancelled: bool = Field(default=False)
     message: Optional[str] = None
     clarifying_questions: Optional[ClarifyingQuestions] = None
     awaiting_clarification: bool = Field(default=False)
@@ -70,6 +76,19 @@ class ResearchProgress(BaseModel):
 class ResearchResponse(BaseModel):
     task_id: str
     status: str
+    progress: ResearchProgress
+
+
+class ResearchRunRequest(ResearchRequest):
+    wait_for_completion: bool = Field(default=True, description="If true, block until the task finishes or times out")
+    poll_interval_seconds: float = Field(default=1.0, ge=0.2, le=10.0)
+    timeout_seconds: int = Field(default=300, ge=1, le=3600)
+
+
+class ResearchRunResponse(BaseModel):
+    task_id: str
+    status: str
+    completed: bool
     progress: ResearchProgress
 
 

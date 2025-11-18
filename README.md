@@ -37,6 +37,12 @@ A comprehensive AI-powered research assistant that combines multiple LLM provide
 - Real-time progress updates
 - Debug panel for development
 
+### 🔌 MCP Server Support
+- **Claude Desktop Integration**: Use as a research tool in Claude
+- **Tool Calling**: Expose research capabilities to other LLMs
+- **Automated Workflow**: Auto-handles clarifications and confirmations
+- **Async Operations**: Non-blocking research with status polling
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -186,12 +192,110 @@ No setup required - works out of the box!
 
 ## 📖 Usage
 
+### Web Interface
+
 1. **Enter Research Topic**: Type your research question or topic
 2. **Select Depth**: Choose research depth (brief/standard/deep)
 3. **Answer Clarifying Questions**: The AI may ask context-specific questions
 4. **Review Search Plan**: Edit or confirm the generated search queries
 5. **View Results**: Read the comprehensive research report
 6. **Export**: Download in Markdown, HTML, or PDF format
+
+### MCP Server (Claude Desktop Integration)
+
+OpenResearch can be used as an MCP (Model Context Protocol) server, allowing Claude Desktop and other MCP clients to perform deep research through tool calls.
+
+**Quick Setup:**
+
+1. Install MCP dependencies:
+   ```bash
+   pip install httpx mcp
+   ```
+
+2. Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`):
+   ```json
+   {
+     "mcpServers": {
+       "openresearch": {
+         "command": "python",
+         "args": ["C:\\path\\to\\openresearch\\backend\\mcp_server.py"]
+       }
+     }
+   }
+   ```
+
+3. Restart Claude Desktop and ask it to research topics!
+
+See [MCP_SERVER_GUIDE.md](MCP_SERVER_GUIDE.md) for detailed MCP server documentation.
+
+## 🔌 API / MCP Integration
+
+Every feature is also exposed over HTTP so other apps or MCP tools can orchestrate deep research workflows:
+
+| Endpoint | Method | Description |
+| --- | --- | --- |
+| `/api/research/start` | `POST` | Launches a new async task. Returns `task_id` plus current progress payload (including clarifying prompts if already available). |
+| `/api/research/run` | `POST` | Same payload as `/start`, but optionally blocks until the task finishes (set `wait_for_completion`, `poll_interval_seconds`, and `timeout_seconds`). |
+| `/api/research/{task_id}` | `GET` | Poll current status. Response includes flags like `awaiting_clarification`, `awaiting_confirmation`, intermediate steps, and final markdown when done. |
+| `/api/research/{task_id}/clarify` | `POST` | Submit answers to outstanding clarifying questions. |
+| `/api/research/{task_id}/confirm` | `POST` | Approve or edit the generated search plan. |
+| `/api/research/{task_id}` | `DELETE` | Cancel a pending task (threads will wind down gracefully). |
+
+### Request payloads
+
+```jsonc
+// POST /api/research/start
+{
+	"topic": "Spotify fastest songs to 1B streams",
+	"depth": "deep",             // surface | standard | deep
+	"metadata": { "request_id": "abc123" }
+}
+
+// POST /api/research/run
+{
+	"topic": "Frontier AI regulation",
+	"depth": "standard",
+	"wait_for_completion": true,
+	"timeout_seconds": 420
+}
+
+// POST /api/research/{task_id}/clarify
+{
+	"answers": ["Focus on global legislation", "Timeframe 2023-2025"]
+}
+
+// POST /api/research/{task_id}/confirm
+{
+	"approved_queries": [
+		{"query": "frontier ai regulation overview 2025", "rationale": "baseline"},
+		{"query": "us eu ai act comparison 2024", "rationale": "regional delta"}
+	]
+}
+```
+
+### Sample MCP tool definition
+
+```json
+{
+	"name": "openresearch",
+	"description": "Multi-step deep research assistant",
+	"input_schema": {
+		"type": "object",
+		"properties": {
+			"topic": {"type": "string"},
+			"depth": {"type": "string", "enum": ["surface", "standard", "deep"]},
+			"wait_for_completion": {"type": "boolean", "default": true}
+		},
+		"required": ["topic"]
+	},
+	"http": {
+		"endpoint": "http://localhost:8081/api/research/run",
+		"method": "POST"
+	}
+}
+```
+
+Responses always echo the full `progress` object, so MCP callers can inspect `status`, pending questions, and final `report_markdown` without reaching into internal state.
 
 ## 🏗️ Architecture
 

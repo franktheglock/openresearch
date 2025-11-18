@@ -3,6 +3,9 @@
 .env.local
 .env.production
 
+# Claude Desktop config (may contain local paths)
+claude_desktop_config.json
+
 # Python
 __pycache__/
 *.py[cod]

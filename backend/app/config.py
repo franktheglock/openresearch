@@ -24,9 +24,9 @@ class Settings(BaseSettings):
 
 	# OpenRouter Services  
 	openrouter_api_key: str = Field(default="", description="OpenRouter API key")
-	openrouter_thinking_model: str = Field(default="openai/gpt-oss-120b", description="Model for reasoning/planning")
-	openrouter_task_model: str = Field(default="openai/gpt-oss-120b", description="Model for writing/completion")
-	openrouter_max_tokens: int = Field(default=4096, description="Maximum tokens for OpenRouter responses")
+	openrouter_thinking_model: str = Field(default="openrouter/sherlock-think-alpha", description="Model for reasoning/planning")
+	openrouter_task_model: str = Field(default="openrouter/sherlock-dash-alpha", description="Model for writing/completion")
+	openrouter_max_tokens: int = Field(default=128000, description="Maximum tokens for OpenRouter responses")
 
 	# OpenAI
 	openai_api_key: str = Field(default="", description="OpenAI API key")
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
 	lmstudio_max_tokens: int = Field(default=2048, description="Max tokens for LMStudio completions")
 
 	# SearxNG
-	searxng_base_url: str = Field(default="http://192.168.1.142:55001")
+	searxng_base_url: str = Field(default="http://192.168.1.44:55001")
 	searxng_engine: str = Field(default="general")
 	searxng_language: str = Field(default="en-US")
 	searxng_results: int = Field(default=8)

@@ -12,6 +12,7 @@ from ..services.gemini_service import gemini
 from ..services.mistral_service import mistral
 from ..services.groq_service import groq
 from ..services.lmstudio_service import lmstudio_client
+from ..services.searxng_service import searx
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -199,6 +200,7 @@ def update_settings(update: SettingsUpdate):
         lmstudio_client.max_tokens = update.lmstudio_max_tokens
     if update.searxng_base_url is not None:
         settings.searxng_base_url = update.searxng_base_url
+        searx.base_url = update.searxng_base_url.rstrip("/")
     if update.searxng_language is not None:
         settings.searxng_language = update.searxng_language
     if update.searxng_results is not None:
